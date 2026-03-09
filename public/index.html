@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reversi — Prolog AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <h1 class="logo">&#9670; Reversi</h1>
+      <p class="tagline">Prolog · Minimax · Alpha-Beta Pruning</p>
+    </div>
+  </header>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <main class="layout">
+
+    <!-- LEFT PANEL -->
+    <aside class="panel panel-left">
+
+      <section class="card settings-card">
+        <h2 class="card-title">Game Setup</h2>
+
+        <div class="field">
+          <label>Mode</label>
+          <select id="sel-mode">
+            <option value="hh">Human vs Human</option>
+            <option value="ha" selected>Human vs AI</option>
+            <option value="aa">AI vs AI</option>
+          </select>
+        </div>
+
+        <div class="field" id="field-depth-ai">
+          <label>AI Difficulty</label>
+          <select id="sel-depth-black">
+            <option value="2">Easy</option>
+            <option value="4" selected>Medium</option>
+            <option value="6">Hard</option>
+            <option value="8">Expert</option>
+          </select>
+        </div>
+
+        <div class="field" id="field-depth-white" style="display:none">
+          <label>AI Difficulty — White</label>
+          <select id="sel-depth-white">
+            <option value="2">Easy</option>
+            <option value="4" selected>Medium</option>
+            <option value="6">Hard</option>
+            <option value="8">Expert</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="btn-new">&#9654; New Game</button>
+      </section>
+
+      <section class="card score-card">
+        <h2 class="card-title">Score</h2>
+        <div class="scores">
+          <div class="score-item" id="score-black">
+            <span class="disc disc-black"></span>
+            <span class="player-label" id="lbl-black">Black</span>
+            <span class="score-num" id="cnt-black">2</span>
+          </div>
+          <div class="score-divider">vs</div>
+          <div class="score-item" id="score-white">
+            <span class="disc disc-white"></span>
+            <span class="player-label" id="lbl-white">White</span>
+            <span class="score-num" id="cnt-white">2</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card turn-card">
+        <div class="turn-row">
+          <span class="disc" id="turn-disc"></span>
+          <span id="turn-text">Black's turn</span>
+        </div>
+        <div id="status-msg" class="status-msg"></div>
+        <div id="ai-spinner" class="ai-spinner" style="display:none">
+          <span class="spinner"></span> AI is thinking…
+        </div>
+      </section>
+
+      <section class="card actions-card">
+        <h2 class="card-title">Actions</h2>
+        <button class="btn btn-warning btn-full" id="btn-surrender">&#9873; Surrender</button>
+        <button class="btn btn-danger  btn-full" id="btn-exit">&#10005; Exit</button>
+      </section>
+
+    </aside>
+
+    <!-- BOARD -->
+    <div class="board-wrap">
+      <!-- Column labels -->
+      <div class="col-labels">
+        <div class="corner-spacer"></div>
+        <span>A</span><span>B</span><span>C</span><span>D</span>
+        <span>E</span><span>F</span><span>G</span><span>H</span>
+      </div>
+      <div class="board-row-wrap">
+        <!-- Row labels -->
+        <div class="row-labels">
+          <span>1</span><span>2</span><span>3</span>
+          <span>4</span><span>5</span><span>6</span>
+          <span>7</span><span>8</span>
+        </div>
+        <!-- The actual board grid -->
+        <div class="board" id="board"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <aside class="panel panel-right">
+
+      <section class="card legend-card">
+        <h2 class="card-title">Legend</h2>
+        <div class="legend-items">
+          <div class="legend-row"><span class="disc disc-black"></span> Black</div>
+          <div class="legend-row"><span class="disc disc-white"></span> White</div>
+          <div class="legend-row"><span class="hint-dot"></span> Valid move</div>
+          <div class="legend-row"><span class="last-marker"></span> Last move</div>
+        </div>
+      </section>
+
+      <section class="card history-card">
+        <h2 class="card-title">Move History</h2>
+        <ol id="history" class="history-list"></ol>
+      </section>
+
+    </aside>
+
+  </main>
+</div>
+
+<!-- ===== GAME-OVER MODAL ===== -->
+<div class="modal-backdrop" id="modal" style="display:none">
+  <div class="modal-box">
+    <div id="modal-trophy">&#127942;</div>
+    <h2 id="modal-title">Game Over</h2>
+    <p id="modal-subtitle"></p>
+
+    <div class="modal-scoreboard">
+      <div class="modal-score-col" id="modal-col-black">
+        <span class="disc disc-black modal-disc"></span>
+        <div class="modal-player-name" id="modal-name-black">Black</div>
+        <div class="modal-big-score" id="modal-black">—</div>
+        <div class="modal-score-label">pieces</div>
+      </div>
+      <div class="modal-vs">VS</div>
+      <div class="modal-score-col" id="modal-col-white">
+        <span class="disc disc-white modal-disc"></span>
+        <div class="modal-player-name" id="modal-name-white">White</div>
+        <div class="modal-big-score" id="modal-white">—</div>
+        <div class="modal-score-label">pieces</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-lg" id="modal-play-again">&#9654; Play Again</button>
+      <button class="btn btn-secondary" id="modal-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
