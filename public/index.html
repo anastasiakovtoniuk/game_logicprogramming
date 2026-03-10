@@ -1,43 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reversi — Prolog AI</title>
+  <title>Реверсі — Prolog AI</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <div class="app">
 
-  <!-- ===== HEADER ===== -->
+  <!-- ===== ШАПКА ===== -->
   <header class="header">
     <div class="header-inner">
-      <h1 class="logo">&#9670; Reversi</h1>
+      <h1 class="logo">&#9670; Реверсі</h1>
       <p class="tagline">Prolog · Minimax · Alpha-Beta Pruning</p>
     </div>
   </header>
 
-  <!-- ===== MAIN LAYOUT ===== -->
+  <!-- ===== ОСНОВНА РОЗКЛАДКА ===== -->
   <main class="layout">
 
-    <!-- LEFT PANEL -->
+    <!-- ЛІВА ПАНЕЛЬ -->
     <aside class="panel panel-left">
 
       <section class="card settings-card">
-        <h2 class="card-title">Game Setup</h2>
+        <h2 class="card-title">Налаштування гри</h2>
 
         <div class="field">
-          <label>Mode</label>
+          <label>Режим</label>
           <select id="sel-mode">
-            <option value="hh">Human vs Human</option>
-            <option value="ha" selected>Human vs AI</option>
-            <option value="aa">AI vs AI</option>
+            <option value="hh">Людина проти людини</option>
+            <option value="ha" selected>Людина проти ШІ</option>
+            <option value="aa">ШІ проти ШІ</option>
           </select>
         </div>
 
         <div class="field">
-          <label>Board Size</label>
+          <label>Розмір дошки</label>
           <select id="sel-size">
             <option value="6">6×6</option>
             <option value="8" selected>8×8</option>
@@ -46,40 +46,40 @@
         </div>
 
         <div class="field" id="field-depth-ai">
-          <label>AI Difficulty</label>
+          <label>Складність ШІ</label>
           <select id="sel-depth-black">
-            <option value="2">Easy (2 plies)</option>
-            <option value="4" selected>Medium (4 plies)</option>
-            <option value="6">Hard (6 plies)</option>
-            <option value="8">Expert (8 plies)</option>
+            <option value="2">Легко (2 рівні)</option>
+            <option value="4" selected>Середньо (4 рівні)</option>
+            <option value="6">Складно (6 рівнів)</option>
+            <option value="8">Експерт (8 рівнів)</option>
           </select>
         </div>
 
         <div class="field" id="field-depth-white" style="display:none">
-          <label>AI Difficulty — White</label>
+          <label>Складність ШІ — Білі</label>
           <select id="sel-depth-white">
-            <option value="2">Easy (2 plies)</option>
-            <option value="4" selected>Medium (4 plies)</option>
-            <option value="6">Hard (6 plies)</option>
-            <option value="8">Expert (8 plies)</option>
+            <option value="2">Легко (2 рівні)</option>
+            <option value="4" selected>Середньо (4 рівні)</option>
+            <option value="6">Складно (6 рівнів)</option>
+            <option value="8">Експерт (8 рівнів)</option>
           </select>
         </div>
 
-        <button class="btn btn-primary btn-full" id="btn-new">&#9654; New Game</button>
+        <button class="btn btn-primary btn-full" id="btn-new">&#9654; Нова гра</button>
       </section>
 
       <section class="card score-card">
-        <h2 class="card-title">Score</h2>
+        <h2 class="card-title">Рахунок</h2>
         <div class="scores">
           <div class="score-item" id="score-black">
             <span class="disc disc-black"></span>
-            <span class="player-label" id="lbl-black">Black</span>
+            <span class="player-label" id="lbl-black">Чорні</span>
             <span class="score-num" id="cnt-black">2</span>
           </div>
           <div class="score-divider">vs</div>
           <div class="score-item" id="score-white">
             <span class="disc disc-white"></span>
-            <span class="player-label" id="lbl-white">White</span>
+            <span class="player-label" id="lbl-white">Білі</span>
             <span class="score-num" id="cnt-white">2</span>
           </div>
         </div>
@@ -88,51 +88,51 @@
       <section class="card turn-card">
         <div class="turn-row">
           <span class="disc" id="turn-disc"></span>
-          <span id="turn-text">Black's turn</span>
+          <span id="turn-text">Хід чорних</span>
         </div>
         <div id="status-msg" class="status-msg"></div>
         <div id="ai-spinner" class="ai-spinner" style="display:none">
-          <span class="spinner"></span> AI is thinking…
+          <span class="spinner"></span> ШІ думає…
         </div>
       </section>
 
       <section class="card actions-card">
-        <h2 class="card-title">Actions</h2>
-        <button class="btn btn-warning btn-full" id="btn-surrender">&#9873; Surrender</button>
-        <button class="btn btn-danger  btn-full" id="btn-exit">&#10005; Exit</button>
+        <h2 class="card-title">Дії</h2>
+        <button class="btn btn-warning btn-full" id="btn-surrender">&#9873; Здатися</button>
+        <button class="btn btn-danger  btn-full" id="btn-exit">&#10005; Вийти</button>
       </section>
 
     </aside>
 
-    <!-- BOARD -->
+    <!-- ДОШКА -->
     <div class="board-wrap">
-      <!-- Column labels (populated by JS) -->
+      <!-- Мітки стовпців (заповнюються JS) -->
       <div class="col-labels" id="col-labels">
         <div class="corner-spacer"></div>
       </div>
       <div class="board-row-wrap">
-        <!-- Row labels (populated by JS) -->
+        <!-- Мітки рядків (заповнюються JS) -->
         <div class="row-labels" id="row-labels"></div>
-        <!-- The actual board grid -->
+        <!-- Сітка дошки -->
         <div class="board" id="board"></div>
       </div>
     </div>
 
-    <!-- RIGHT PANEL -->
+    <!-- ПРАВА ПАНЕЛЬ -->
     <aside class="panel panel-right">
 
       <section class="card legend-card">
-        <h2 class="card-title">Legend</h2>
+        <h2 class="card-title">Легенда</h2>
         <div class="legend-items">
-          <div class="legend-row"><span class="disc disc-black"></span> Black</div>
-          <div class="legend-row"><span class="disc disc-white"></span> White</div>
-          <div class="legend-row"><span class="hint-dot"></span> Valid move</div>
-          <div class="legend-row"><span class="last-marker"></span> Last move</div>
+          <div class="legend-row"><span class="disc disc-black"></span> Чорні</div>
+          <div class="legend-row"><span class="disc disc-white"></span> Білі</div>
+          <div class="legend-row"><span class="hint-dot"></span> Допустимий хід</div>
+          <div class="legend-row"><span class="last-marker"></span> Останній хід</div>
         </div>
       </section>
 
       <section class="card history-card">
-        <h2 class="card-title">Move History</h2>
+        <h2 class="card-title">Історія ходів</h2>
         <ol id="history" class="history-list"></ol>
       </section>
 
@@ -141,32 +141,32 @@
   </main>
 </div>
 
-<!-- ===== GAME-OVER MODAL ===== -->
+<!-- ===== МОДАЛЬНЕ ВІКНО КІНЦЯ ГРИ ===== -->
 <div class="modal-backdrop" id="modal" style="display:none">
   <div class="modal-box">
     <div id="modal-trophy">&#127942;</div>
-    <h2 id="modal-title">Game Over</h2>
+    <h2 id="modal-title">Гра завершена</h2>
     <p id="modal-subtitle"></p>
 
     <div class="modal-scoreboard">
       <div class="modal-score-col" id="modal-col-black">
         <span class="disc disc-black modal-disc"></span>
-        <div class="modal-player-name" id="modal-name-black">Black</div>
+        <div class="modal-player-name" id="modal-name-black">Чорні</div>
         <div class="modal-big-score" id="modal-black">—</div>
-        <div class="modal-score-label">pieces</div>
+        <div class="modal-score-label">фішок</div>
       </div>
       <div class="modal-vs">VS</div>
       <div class="modal-score-col" id="modal-col-white">
         <span class="disc disc-white modal-disc"></span>
-        <div class="modal-player-name" id="modal-name-white">White</div>
+        <div class="modal-player-name" id="modal-name-white">Білі</div>
         <div class="modal-big-score" id="modal-white">—</div>
-        <div class="modal-score-label">pieces</div>
+        <div class="modal-score-label">фішок</div>
       </div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-primary btn-lg" id="modal-play-again">&#9654; Play Again</button>
-      <button class="btn btn-secondary" id="modal-close">Close</button>
+      <button class="btn btn-primary btn-lg" id="modal-play-again">&#9654; Грати знову</button>
+      <button class="btn btn-secondary" id="modal-close">Закрити</button>
     </div>
   </div>
 </div>

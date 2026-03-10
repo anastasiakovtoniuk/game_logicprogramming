@@ -1,6 +1,6 @@
 /* ============================================================
-   Reversi — Frontend Game Controller
-   Communicates with Prolog backend via REST API
+   Reversi — Контролер гри (фронтенд)
+   Взаємодіє з Prolog-сервером через REST API
    ============================================================ */
 
 'use strict';
@@ -8,12 +8,12 @@
 const API = 'http://localhost:8080/api';
 
 // ============================================================
-// State
+// Стан гри
 // ============================================================
 const state = {
   board:         Array(64).fill(0),
-  size:          8,            // board dimension (6, 8, or 10)
-  gameId:        0,            // incremented on each new game to discard stale responses
+  size:          8,            // розмір дошки (6, 8 або 10)
+  gameId:        0,            // зростає при кожній новій грі — ігнорує застарілі відповіді
   currentPlayer: 1,
   validMoves:    [],           // [{row, col}, ...]
   lastMove:      null,         // {row, col}
@@ -22,17 +22,17 @@ const state = {
   blackCount:    2,
   whiteCount:    2,
   mode:          'ha',         // hh / ha / aa
-  humanPlayer:   1,            // which player number the human controls (ha mode)
+  humanPlayer:   1,            // номер гравця-людини (режим ha)
   depthBlack:    4,
   depthWhite:    4,
   moveNumber:    0,
   aiRunning:     false,
   aiTimer:       null,
-  moveDelay:     600,          // ms pause between moves so the board is visible
+  moveDelay:     600,          // затримка між ходами (мс), щоб зміна дошки була помітна
 };
 
 // ============================================================
-// DOM helpers
+// Допоміжні функції DOM
 // ============================================================
 const $  = id => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -43,7 +43,7 @@ const el = (tag, cls, html) => {
 };
 
 // ============================================================
-// Build the N×N board grid (rebuilt on each new game)
+// Побудова сітки дошки N×N (оновлюється при кожній новій грі)
 // ============================================================
 function buildBoardDOM() {
   const S     = state.size;
@@ -51,11 +51,11 @@ function buildBoardDOM() {
   const board = $('board');
   board.innerHTML = '';
 
-  // Set CSS grid to N columns/rows of --cell-size each
+  // Встановлюємо CSS-сітку: N стовпців/рядків розміру --cell-size
   board.style.gridTemplateColumns = `repeat(${S}, var(--cell-size))`;
   board.style.gridTemplateRows    = `repeat(${S}, var(--cell-size))`;
 
-  // Star points: quarter positions (S/4 and 3*S/4 - 1, 0-based)
+  // Декоративні точки на чверть-позиціях дошки (0-based)
   const q = Math.floor(S / 4);
   const stars = new Set([
     (q) * S + q,         (q) * S + (S - q - 1),
@@ -70,7 +70,7 @@ function buildBoardDOM() {
     board.appendChild(cell);
   }
 
-  // Column labels: A, B, C, ...
+  // Підписи стовпців: A, B, C, ...
   const colLabels = $('col-labels');
   colLabels.innerHTML = '<div class="corner-spacer"></div>';
   for (let c = 0; c < S; c++) {
@@ -79,7 +79,7 @@ function buildBoardDOM() {
     colLabels.appendChild(span);
   }
 
-  // Row labels: 1, 2, 3, ...
+  // Підписи рядків: 1, 2, 3, ...
   const rowLabels = $('row-labels');
   rowLabels.innerHTML = '';
   for (let r = 0; r < S; r++) {
@@ -90,16 +90,16 @@ function buildBoardDOM() {
 }
 
 // ============================================================
-// Render board from state
+// Відображення дошки зі стану
 // ============================================================
 function renderBoard() {
-  const S      = Math.round(Math.sqrt(state.board.length));
+  const S       = Math.round(Math.sqrt(state.board.length));
   const cells   = document.querySelectorAll('.cell');
   const validSet = new Set(state.validMoves.map(m => m.row * S + m.col));
   const lastIdx  = state.lastMove ? state.lastMove.row * S + state.lastMove.col : -1;
 
   cells.forEach((cell, i) => {
-    // Reset classes
+    // Скидаємо класи та вміст клітинки
     cell.className = 'cell';
     cell.innerHTML = '';
 
@@ -115,19 +115,19 @@ function renderBoard() {
 
     if (i === lastIdx) cell.classList.add('last-move');
 
-    // Star dot
+    // Зберігаємо декоративну точку
     if (cell.dataset.star) cell.dataset.star = '1';
   });
 }
 
 // ============================================================
-// Update HUD (scores, turn indicator, status)
+// Оновлення HUD (рахунок, індикатор ходу, статус)
 // ============================================================
 function updateHUD() {
   $('cnt-black').textContent = state.blackCount;
   $('cnt-white').textContent = state.whiteCount;
 
-  // active player highlight
+  // Підсвітка активного гравця
   $('score-black').classList.toggle('active-player', state.currentPlayer === 1 && !state.gameOver);
   $('score-white').classList.toggle('active-player', state.currentPlayer === 2 && !state.gameOver);
 
@@ -136,21 +136,21 @@ function updateHUD() {
 
   const playerName = currentPlayerName();
   $('turn-text').textContent = state.gameOver
-    ? 'Game over'
-    : `${playerName}'s turn`;
+    ? 'Гра завершена'
+    : `Хід: ${playerName}`;
 }
 
 // ============================================================
-// Helpers
+// Допоміжні функції
 // ============================================================
 function currentPlayerName() {
-  return state.currentPlayer === 1 ? 'Black' : 'White';
+  return state.currentPlayer === 1 ? 'Чорні' : 'Білі';
 }
 
 function isAI(player) {
   if (state.mode === 'aa') return true;
   if (state.mode === 'ha') return player !== state.humanPlayer;
-  return false;  // hh: nobody is AI
+  return false;  // hh: жоден не є AI
 }
 
 function depthFor(player) {
@@ -161,7 +161,7 @@ function colLetter(col) { return String.fromCharCode(65 + col); }
 function moveLabel(row, col) { return colLetter(col) + (row + 1); }
 
 // ============================================================
-// Apply server response to local state
+// Застосування відповіді сервера до стану гри
 // ============================================================
 function applyResponse(data) {
   state.board         = data.board;
@@ -170,21 +170,21 @@ function applyResponse(data) {
   state.blackCount    = data.black_count;
   state.whiteCount    = data.white_count;
   state.gameOver      = data.game_over === 1;
-  state.winner        = data.winner;   // -1 = no winner yet, 0=draw, 1=black, 2=white
+  state.winner        = data.winner;   // -1 = гра триває, 0 = нічия, 1 = чорні, 2 = білі
   if (data.last_move) state.lastMove = data.last_move;
 }
 
 // ============================================================
-// History
+// Журнал ходів
 // ============================================================
 function addHistoryEntry(player, row, col, passed) {
   const list = $('history');
   const li = el('li');
   if (passed) {
-    li.innerHTML = `<span class="h-${player === 1 ? 'black' : 'white'}">${player === 1 ? 'Black' : 'White'}</span> <span class="h-pass">passed</span>`;
+    li.innerHTML = `<span class="h-${player === 1 ? 'black' : 'white'}">${player === 1 ? 'Чорні' : 'Білі'}</span> <span class="h-pass">пропустили</span>`;
   } else {
     const cls  = player === 1 ? 'h-black' : 'h-white';
-    const name = player === 1 ? 'Black' : 'White';
+    const name = player === 1 ? 'Чорні' : 'Білі';
     li.innerHTML = `<span class="${cls}">${name}</span> → ${moveLabel(row, col)}`;
   }
   list.appendChild(li);
@@ -192,7 +192,7 @@ function addHistoryEntry(player, row, col, passed) {
 }
 
 // ============================================================
-// Sound: short click using Web Audio API (no external files)
+// Звук: короткий клік через Web Audio API (без зовнішніх файлів)
 // ============================================================
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -210,14 +210,14 @@ function playMoveSound() {
 }
 
 // ============================================================
-// Status messages
+// Повідомлення статусу
 // ============================================================
 function setStatus(msg) {
   $('status-msg').textContent = msg;
 }
 
 // ============================================================
-// API calls
+// Запити до API
 // ============================================================
 async function apiNewGame(size) {
   const res = await fetch(`${API}/new_game`, {
@@ -250,7 +250,7 @@ async function apiAiMove(board, player, depth) {
 }
 
 // ============================================================
-// Main game flow
+// Основна логіка гри
 // ============================================================
 async function startGame() {
   stopAI();
@@ -259,7 +259,7 @@ async function startGame() {
   const depth      = parseInt($('sel-depth-black').value, 10);
   state.depthBlack = depth;
   state.depthWhite = state.mode === 'aa' ? parseInt($('sel-depth-white').value, 10) : depth;
-  // Randomly assign human color in Human vs AI mode
+  // Випадкове призначення кольору людині у режимі людина проти AI
   state.humanPlayer = (state.mode === 'ha') ? (Math.random() < 0.5 ? 1 : 2) : 1;
   state.lastMove   = null;
   state.moveNumber = 0;
@@ -272,7 +272,7 @@ async function startGame() {
 
   try {
     const data = await apiNewGame(state.size);
-    if (state.gameId !== myGameId) return;  // stale response from a previous startGame
+    if (state.gameId !== myGameId) return;  // застаріла відповідь від попереднього запуску
     state.board         = data.board;
     state.currentPlayer = data.current_player;
     state.validMoves    = data.valid_moves ?? [];
@@ -284,17 +284,17 @@ async function startGame() {
     renderBoard();
     updateHUD();
     if (state.mode === 'ha') {
-      const colorName = state.humanPlayer === 1 ? 'Black' : 'White';
-      setStatus(`You are ${colorName}.`);
+      const colorName = state.humanPlayer === 1 ? 'чорними' : 'білими';
+      setStatus(`Ви граєте ${colorName}.`);
     }
     scheduleAIIfNeeded();
   } catch (e) {
-    setStatus('Cannot reach server. Is Prolog running?');
+    setStatus('Неможливо зʼєднатися з сервером. Чи запущено Prolog?');
   }
 }
 
 // ============================================================
-// Human click on cell
+// Клік людини по клітинці
 // ============================================================
 async function onCellClick(e) {
   if (state.gameOver || state.aiRunning) return;
@@ -312,7 +312,7 @@ async function onCellClick(e) {
 }
 
 // ============================================================
-// Execute a move (human or AI)
+// Виконання ходу (людина або AI)
 // ============================================================
 async function performMove(player, row, col) {
   const myGameId = state.gameId;
@@ -320,7 +320,7 @@ async function performMove(player, row, col) {
     const data = await apiMakeMove(state.board, player, row, col);
     if (state.gameId !== myGameId) return;
     if (data.error) {
-      setStatus('Invalid move: ' + (data.message || data.error));
+      setStatus('Недопустимий хід: ' + (data.message || data.error));
       return;
     }
     state.lastMove = { row, col };
@@ -335,10 +335,10 @@ async function performMove(player, row, col) {
       return;
     }
 
-    // Check if current player passed (next_player stayed same player)
+    // Перевірка: суперник пропустив хід (next_player лишився тим самим)
     if (data.next_player !== 0 && data.next_player === player) {
-      const otherName = player === 1 ? 'White' : 'Black';
-      setStatus(`${otherName} has no moves — skipped.`);
+      const otherName = player === 1 ? 'Білі' : 'Чорні';
+      setStatus(`${otherName} не мають ходів — пропускають.`);
       addHistoryEntry(player === 1 ? 2 : 1, -1, -1, true);
     } else {
       setStatus('');
@@ -346,19 +346,19 @@ async function performMove(player, row, col) {
 
     scheduleAIIfNeeded();
   } catch (err) {
-    setStatus('Server error. Check Prolog.');
+    setStatus('Помилка сервера. Перевірте Prolog.');
     console.error(err);
   }
 }
 
 // ============================================================
-// AI move
+// Хід AI
 // ============================================================
 function scheduleAIIfNeeded() {
   if (state.gameOver) return;
   if (!isAI(state.currentPlayer)) return;
   clearTimeout(state.aiTimer);
-  // Small delay so the board render is visible
+  // Невелика затримка, щоб зміна дошки була видима до наступного ходу
   state.aiTimer = setTimeout(runAI, state.moveDelay);
 }
 
@@ -378,8 +378,8 @@ async function runAI() {
 
     if (data.passed === 1) {
       addHistoryEntry(player, -1, -1, true);
-      const pName = player === 1 ? 'Black' : 'White';
-      setStatus(`${pName} AI has no valid moves — passed.`);
+      const pName = player === 1 ? 'Чорний' : 'Білий';
+      setStatus(`${pName} ШІ не має допустимих ходів — пропускає.`);
       applyResponse(data);
       renderBoard();
       updateHUD();
@@ -404,8 +404,8 @@ async function runAI() {
     }
 
     if (data.next_player !== 0 && data.next_player === player) {
-      const otherName = player === 1 ? 'White' : 'Black';
-      setStatus(`${otherName} has no moves — skipped.`);
+      const otherName = player === 1 ? 'Білі' : 'Чорні';
+      setStatus(`${otherName} не мають ходів — пропускають.`);
       addHistoryEntry(player === 1 ? 2 : 1, -1, -1, true);
     } else {
       setStatus('');
@@ -414,7 +414,7 @@ async function runAI() {
     scheduleAIIfNeeded();
   } catch (err) {
     state.aiRunning = false;
-    setStatus('AI error. Check Prolog server.');
+    setStatus('Помилка ШІ. Перевірте Prolog сервер.');
     console.error(err);
   }
 }
@@ -425,38 +425,38 @@ function stopAI() {
 }
 
 // ============================================================
-// Game Over modal
+// Модальне вікно завершення гри
 // ============================================================
 function showGameOver() {
   stopAI();
   const w = state.winner;
 
-  // Trophy & title
+  // Трофей і заголовок
   $('modal-trophy').textContent = w === 0 ? '🤝' : '🏆';
   if (w === 0) {
-    $('modal-title').textContent    = "It's a Draw!";
-    $('modal-subtitle').textContent = 'Both players finished with the same number of pieces.';
+    $('modal-title').textContent    = 'Нічия!';
+    $('modal-subtitle').textContent = 'Обидва гравці завершили з однаковою кількістю фішок.';
   } else {
-    const wName = w === 1 ? 'Black' : 'White';
-    $('modal-title').textContent    = `${wName} Wins!`;
-    $('modal-subtitle').textContent = `${wName} dominates the board.`;
+    const wName = w === 1 ? 'Чорні' : 'Білі';
+    $('modal-title').textContent    = `${wName} перемогли!`;
+    $('modal-subtitle').textContent = `${wName} захопили дошку.`;
   }
 
-  // Scores
+  // Рахунок
   $('modal-black').textContent = state.blackCount;
   $('modal-white').textContent = state.whiteCount;
 
-  // Highlight the winner column
+  // Підсвітка стовпця переможця
   $('modal-col-black').classList.toggle('winner-col', w === 1);
   $('modal-col-white').classList.toggle('winner-col', w === 2);
 
-  // Show which color is human in ha mode
+  // Підписи гравців: показуємо хто людина, а хто AI (режим ha)
   if (state.mode === 'ha') {
-    $('modal-name-black').textContent = state.humanPlayer === 1 ? 'You (Black)' : 'AI (Black)';
-    $('modal-name-white').textContent = state.humanPlayer === 2 ? 'You (White)' : 'AI (White)';
+    $('modal-name-black').textContent = state.humanPlayer === 1 ? 'Ви (Чорні)' : 'ШІ (Чорні)';
+    $('modal-name-white').textContent = state.humanPlayer === 2 ? 'Ви (Білі)' : 'ШІ (Білі)';
   } else {
-    $('modal-name-black').textContent = state.mode === 'aa' ? 'AI (Black)' : 'Black';
-    $('modal-name-white').textContent = state.mode === 'aa' ? 'AI (White)' : 'White';
+    $('modal-name-black').textContent = state.mode === 'aa' ? 'ШІ (Чорні)' : 'Чорні';
+    $('modal-name-white').textContent = state.mode === 'aa' ? 'ШІ (Білі)' : 'Білі';
   }
 
   $('modal').style.display = 'flex';
@@ -467,57 +467,57 @@ function hideModal() {
 }
 
 // ============================================================
-// Surrender
+// Здача
 // ============================================================
 async function surrender() {
   if (state.gameOver) return;
   stopAI();
   const loser  = state.currentPlayer;
   const winner = loser === 1 ? 2 : 1;
-  const lName  = loser  === 1 ? 'Black' : 'White';
-  const wName  = winner === 1 ? 'Black' : 'White';
+  const lName  = loser  === 1 ? 'Чорні' : 'Білі';
+  const wName  = winner === 1 ? 'Чорні' : 'Білі';
 
   state.gameOver = true;
   state.winner   = winner;
 
   $('modal-trophy').textContent   = '🏳️';
-  $('modal-title').textContent    = `${wName} Wins!`;
-  $('modal-subtitle').textContent = `${lName} surrendered.`;
+  $('modal-title').textContent    = `${wName} перемогли!`;
+  $('modal-subtitle').textContent = `${lName} здалися.`;
   $('modal-black').textContent    = state.blackCount;
   $('modal-white').textContent    = state.whiteCount;
   $('modal-col-black').classList.toggle('winner-col', winner === 1);
   $('modal-col-white').classList.toggle('winner-col', winner === 2);
-  $('modal-name-black').textContent = 'Black';
-  $('modal-name-white').textContent = 'White';
+  $('modal-name-black').textContent = 'Чорні';
+  $('modal-name-white').textContent = 'Білі';
   $('modal').style.display = 'flex';
 
   updateHUD();
 }
 
 // ============================================================
-// Mode visibility: hide irrelevant depth selectors
+// Видимість селекторів складності залежно від режиму
 // ============================================================
 function updateDepthVisibility() {
   const mode = $('sel-mode').value;
-  // Single difficulty selector for ha/hh, two for aa
+  // Один селектор складності для ha/hh, два для aa
   $('field-depth-ai').style.display    = (mode !== 'hh') ? '' : 'none';
   $('field-depth-white').style.display = (mode === 'aa') ? '' : 'none';
-  // In aa mode, relabel the first selector
+  // У режимі aa перейменовуємо перший селектор
   $('field-depth-ai').querySelector('label').textContent =
-    (mode === 'aa') ? 'AI Difficulty — Black' : 'AI Difficulty';
+    (mode === 'aa') ? 'Складність ШІ — Чорні' : 'Складність ШІ';
 }
 
 // ============================================================
-// Player label names (Human / AI)
+// Підписи гравців (Людина / AI)
 // ============================================================
 function updatePlayerLabels() {
   const mode = $('sel-mode').value;
-  $('lbl-black').textContent = (mode === 'aa') ? 'Black AI' : 'Black';
-  $('lbl-white').textContent = (mode === 'aa') ? 'White AI' : 'White';
+  $('lbl-black').textContent = (mode === 'aa') ? 'ШІ (Чорні)' : 'Чорні';
+  $('lbl-white').textContent = (mode === 'aa') ? 'ШІ (Білі)' : 'Білі';
 }
 
 // ============================================================
-// Event wiring
+// Прив'язка подій
 // ============================================================
 $('btn-new').addEventListener('click', startGame);
 
@@ -529,28 +529,28 @@ $('sel-mode').addEventListener('change', () => {
 $('btn-surrender').addEventListener('click', surrender);
 
 $('btn-exit').addEventListener('click', () => {
-  if (confirm('Exit the game?')) {
+  if (confirm('Вийти з гри?')) {
     stopAI();
     state.gameOver = true;
     updateHUD();
-    setStatus('Game ended. Press "New Game" to restart.');
-    renderBoard();   // clear hints
+    setStatus('Гру завершено. Натисніть «Нова гра» для перезапуску.');
+    renderBoard();   // прибираємо підказки
   }
 });
 
 $('modal-play-again').addEventListener('click', startGame);
 $('modal-close').addEventListener('click', hideModal);
 
-// Close modal on backdrop click
+// Закриття модального вікна кліком на фон
 $('modal').addEventListener('click', e => {
   if (e.target === $('modal')) hideModal();
 });
 
 // ============================================================
-// Init
+// Ініціалізація
 // ============================================================
 updateDepthVisibility();
 updatePlayerLabels();
 
-// Attempt to start a game automatically
+// Автоматичний запуск гри при завантаженні сторінки
 startGame();

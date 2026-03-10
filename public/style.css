@@ -1,5 +1,5 @@
 /* ============================================================
-   Reversi — CSS (modern dark-green theme)
+   Reversi — CSS (сучасна темно-зелена тема)
    ============================================================ */
 
 :root {
@@ -36,7 +36,7 @@ body {
   min-height: 100vh;
 }
 
-/* ===== HEADER ===== */
+/* ===== ШАПКА ===== */
 .header {
   background: linear-gradient(135deg, #0f4c2a 0%, #1a6b3c 50%, #0f3460 100%);
   border-bottom: 1px solid var(--border);
@@ -46,7 +46,7 @@ body {
 .logo { font-size: 2rem; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
 .tagline { color: var(--text-muted); font-size: 0.85rem; }
 
-/* ===== LAYOUT ===== */
+/* ===== РОЗКЛАДКА ===== */
 .app { display: flex; flex-direction: column; min-height: 100vh; }
 .layout {
   flex: 1;
@@ -59,12 +59,12 @@ body {
   align-items: flex-start;
 }
 
-/* ===== PANELS ===== */
+/* ===== ПАНЕЛІ ===== */
 .panel { display: flex; flex-direction: column; gap: 14px; min-width: 210px; }
 .panel-left  { width: 220px; flex-shrink: 0; }
 .panel-right { width: 210px; flex-shrink: 0; }
 
-/* ===== CARDS ===== */
+/* ===== КАРТКИ ===== */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -81,7 +81,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* ===== FORM FIELDS ===== */
+/* ===== ПОЛЯ ФОРМИ ===== */
 .field { margin-bottom: 10px; }
 .field label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
 .field select {
@@ -100,7 +100,7 @@ body {
 }
 .field select:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
 
-/* ===== BUTTONS ===== */
+/* ===== КНОПКИ ===== */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 6px;
@@ -119,7 +119,7 @@ body {
 .btn-warning { background: var(--orange); color: #fff; }
 .btn-danger  { background: var(--red);    color: #fff; }
 
-/* ===== SCORES ===== */
+/* ===== РАХУНОК ===== */
 .scores { display: flex; align-items: center; gap: 10px; }
 .score-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .score-divider { color: var(--text-muted); font-weight: 700; }
@@ -128,10 +128,10 @@ body {
 #score-black .score-num { color: #d1fae5; }
 #score-white .score-num { color: #fef3c7; }
 
-/* active player highlight */
+/* підсвітка активного гравця */
 .score-item.active-player { background: rgba(74,222,128,.08); border-radius: 8px; padding: 4px; }
 
-/* ===== DISCS ===== */
+/* ===== ФІШКИ ===== */
 .disc {
   width: 24px; height: 24px;
   border-radius: 50%;
@@ -147,7 +147,7 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 
-/* ===== TURN CARD ===== */
+/* ===== КАРТКА ХОДУ ===== */
 .turn-card { display: flex; flex-direction: column; gap: 8px; }
 .turn-row { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; }
 .status-msg { font-size: 0.8rem; color: var(--accent); min-height: 18px; }
@@ -161,14 +161,14 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== BOARD WRAP ===== */
+/* ===== ОБГОРТКА ДОШКИ ===== */
 .board-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; }
 
 .col-labels {
   display: flex;
   align-items: center;
   gap: 0;
-  padding-left: 26px;   /* align with row-labels width */
+  padding-left: 26px;   /* вирівнювання з шириною міток рядків */
   margin-bottom: 4px;
   color: var(--text-muted);
   font-size: 0.78rem;
@@ -193,7 +193,7 @@ body {
   align-self: stretch;
 }
 
-/* ===== BOARD GRID ===== */
+/* ===== СІТКА ДОШКИ ===== */
 .board {
   display: grid;
   grid-template-columns: repeat(8, var(--cell-size));
@@ -217,7 +217,7 @@ body {
 }
 .cell:hover { background: #166534; }
 
-/* Dot markers at star points (standard Reversi/Go board aesthetics) */
+/* Крапки-орієнтири на зірчастих точках (стандартна естетика дошки Reversi/Go) */
 .cell[data-star]::after {
   content: '';
   position: absolute;
@@ -227,7 +227,7 @@ body {
   pointer-events: none;
 }
 
-/* Cell disc */
+/* Фішка у клітинці */
 .cell .disc {
   width: 80%; height: 80%;
   transition: transform .25s cubic-bezier(.34,1.56,.64,1);
@@ -241,7 +241,7 @@ body {
   100% { transform: scaleY(1); }
 }
 
-/* Valid move hint */
+/* Підказка допустимого ходу */
 .cell.valid-hint {
   cursor: pointer;
 }
@@ -258,7 +258,7 @@ body {
 .cell.valid-hint:hover::before { transform: scale(1.3); }
 .cell.valid-hint:hover { background: #1d7a40; }
 
-/* Last move ring */
+/* Кільце останнього ходу */
 .cell.last-move::after {
   content: '';
   position: absolute;
@@ -269,7 +269,7 @@ body {
   z-index: 2;
 }
 
-/* ===== LEGEND ===== */
+/* ===== ЛЕГЕНДА ===== */
 .legend-items { display: flex; flex-direction: column; gap: 8px; }
 .legend-row { display: flex; align-items: center; gap: 10px; font-size: 0.84rem; }
 .hint-dot {
@@ -283,7 +283,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ===== HISTORY ===== */
+/* ===== ІСТОРІЯ ХОДІВ ===== */
 .history-list {
   max-height: 300px;
   overflow-y: auto;
@@ -301,7 +301,7 @@ body {
 .history-list li span.h-white { color: #fcd34d; }
 .history-list li span.h-pass  { color: #f87171; font-style: italic; }
 
-/* ===== MODAL ===== */
+/* ===== МОДАЛЬНЕ ВІКНО ===== */
 .modal-backdrop {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.65);
@@ -349,7 +349,7 @@ body {
   margin-bottom: 28px;
 }
 
-/* Score board inside modal */
+/* Таблиця рахунку у модальному вікні */
 .modal-scoreboard {
   display: flex;
   align-items: center;
@@ -385,7 +385,7 @@ body {
 .modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .btn-lg { padding: 12px 28px; font-size: 1rem; }
 
-/* ===== RESPONSIVE ===== */
+/* ===== АДАПТИВНІСТЬ ===== */
 @media (max-width: 900px) {
   :root { --cell-size: 46px; }
   .layout { flex-direction: column; align-items: center; }
