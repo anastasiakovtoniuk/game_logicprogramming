@@ -334,11 +334,33 @@ cell_weight_rc(R, C, Max, W) :-
     ;   is_edge_corner_adj(R, C, Max) -> W =  -20
     ;   is_diag_corner_adj(R, C, Max) -> W =  -50
     ;   is_edge(R, C, Max)            -> W =   10
-    ;                                    W =   -1
+    ;   % Внутрішні клітинки: краще ближче до центру (стабільніші)
+        DistR is min(R, Max - R),
+        DistC is min(C, Max - C),
+        D is min(DistR, DistC),        % D=1: поряд з краєм, D=2+: ближче до центру
+        W is D - 2                     % D=1→-1, D=2→0, D=3→+1, ...
     ).
 
 % Мультипризначеність:
 % cell_weight_rc(++Row, ++Col, ++Max, --Weight) – єдиний режим: ваговий коефіцієнт клітинки.
+
+% weight_move(++Max, ++Move, --WeightedMove)
+% Прикріплює позиційну вагу до ходу для сортування.
+weight_move(Max, R-C, W-(R-C)) :- cell_weight_rc(R, C, Max, W).
+
+% strip_key(++Pair, --Move)
+% Витягує хід з пари Вага-Хід.
+strip_key(_-M, M).
+
+% sort_moves(++Moves, --Sorted)
+% Сортує ходи за спаданням позиційної ваги для кращого відсікання Альфа-Бета.
+% Кути та краї переглядаються першими — і для MAX, і для MIN гравця.
+sort_moves(Moves, Sorted) :-
+    board_size(S), Max is S - 1,
+    maplist(weight_move(Max), Moves, Keyed),
+    msort(Keyed, Ascending),
+    reverse(Ascending, Descending),
+    maplist(strip_key, Descending, Sorted).
 
 % evaluate_flat(++Board, ++Idx, ++Size, +Acc, --Score)
 % Рекурсивно обчислює зважену суму оцінки по всій дошці.
@@ -361,18 +383,21 @@ evaluate_flat([Cell | Rest], Idx, Size, Acc, Score) :-
 
 % evaluate(++Board, --Score)
 % Евристична оцінка позиції з точки зору чорних.
-% Рання гра: позиційна оцінка за ваговою таблицею.
-% Ендшпіль (>75% клітинок заповнено): перевага у фішках × 10 + позиційна оцінка.
+% Рання гра: позиційна оцінка + мобільність × 10.
+% Ендшпіль (>75% клітинок заповнено): лише перевага у фішках × 10.
 evaluate(Board, Score) :-
     board_size(Size),
     evaluate_flat(Board, 0, Size, 0, PosScore),
     count_pieces(Board, 1, Black),
     count_pieces(Board, 2, White),
+    valid_moves(Board, 1, BM), length(BM, BlackMoves),
+    valid_moves(Board, 2, WM), length(WM, WhiteMoves),
+    MobilityScore is (BlackMoves - WhiteMoves) * 10,
     Total is Black + White,
     Threshold is (Size * Size * 3) // 4,   % поріг переходу до ендшпілю
     (   Total >= Threshold
-    ->  Score is (Black - White) * 10 + PosScore
-    ;   Score = PosScore
+    ->  Score is (Black - White) * 10   % ендшпіль: лише кількість фішок
+    ;   Score is PosScore + MobilityScore
     ).
 
 % Мультипризначеність:
@@ -411,9 +436,11 @@ minimax(Board, Player, Depth, Alpha, Beta, BestMove, Score) :-
         ->  terminal_score(Board, Score), BestMove = none   % обидва пропускають — кінець
         ;   minimax(Board, Opp, Depth, Alpha, Beta, _, Score), BestMove = none
         )
-    ;   Player =:= 1
-    ->  max_search(Moves, Board, Depth, Alpha, Beta, none, -1000000, BestMove, Score)
-    ;   min_search(Moves, Board, Depth, Alpha, Beta, none,  1000000, BestMove, Score)
+    ;   sort_moves(Moves, Sorted),
+        (   Player =:= 1
+        ->  max_search(Sorted, Board, Depth, Alpha, Beta, none, -1000000, BestMove, Score)
+        ;   min_search(Sorted, Board, Depth, Alpha, Beta, none,  1000000, BestMove, Score)
+        )
     ).
 
 % Мультипризначеність:
