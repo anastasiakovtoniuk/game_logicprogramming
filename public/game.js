@@ -12,6 +12,8 @@ const API = 'http://localhost:8080/api';
 // ============================================================
 const state = {
   board:         Array(64).fill(0),
+  size:          8,            // board dimension (6, 8, or 10)
+  gameId:        0,            // incremented on each new game to discard stale responses
   currentPlayer: 1,
   validMoves:    [],           // [{row, col}, ...]
   lastMove:      null,         // {row, col}
@@ -41,19 +43,49 @@ const el = (tag, cls, html) => {
 };
 
 // ============================================================
-// Build the 8×8 board grid (one-time)
+// Build the N×N board grid (rebuilt on each new game)
 // ============================================================
 function buildBoardDOM() {
+  const S     = state.size;
+  const total = S * S;
   const board = $('board');
   board.innerHTML = '';
-  // Star points (like go board aesthetics): rows/cols 2,5 (0-based)
-  const stars = new Set([18, 21, 42, 45]);
-  for (let i = 0; i < 64; i++) {
+
+  // Set CSS grid to N columns/rows of --cell-size each
+  board.style.gridTemplateColumns = `repeat(${S}, var(--cell-size))`;
+  board.style.gridTemplateRows    = `repeat(${S}, var(--cell-size))`;
+
+  // Star points: quarter positions (S/4 and 3*S/4 - 1, 0-based)
+  const q = Math.floor(S / 4);
+  const stars = new Set([
+    (q) * S + q,         (q) * S + (S - q - 1),
+    (S - q - 1) * S + q, (S - q - 1) * S + (S - q - 1)
+  ]);
+
+  for (let i = 0; i < total; i++) {
     const cell = el('div', 'cell');
     cell.dataset.idx = i;
     if (stars.has(i)) cell.dataset.star = '1';
     cell.addEventListener('click', onCellClick);
     board.appendChild(cell);
+  }
+
+  // Column labels: A, B, C, ...
+  const colLabels = $('col-labels');
+  colLabels.innerHTML = '<div class="corner-spacer"></div>';
+  for (let c = 0; c < S; c++) {
+    const span = document.createElement('span');
+    span.textContent = String.fromCharCode(65 + c);
+    colLabels.appendChild(span);
+  }
+
+  // Row labels: 1, 2, 3, ...
+  const rowLabels = $('row-labels');
+  rowLabels.innerHTML = '';
+  for (let r = 0; r < S; r++) {
+    const span = document.createElement('span');
+    span.textContent = r + 1;
+    rowLabels.appendChild(span);
   }
 }
 
@@ -61,9 +93,10 @@ function buildBoardDOM() {
 // Render board from state
 // ============================================================
 function renderBoard() {
+  const S      = Math.round(Math.sqrt(state.board.length));
   const cells   = document.querySelectorAll('.cell');
-  const validSet = new Set(state.validMoves.map(m => m.row * 8 + m.col));
-  const lastIdx  = state.lastMove ? state.lastMove.row * 8 + state.lastMove.col : -1;
+  const validSet = new Set(state.validMoves.map(m => m.row * S + m.col));
+  const lastIdx  = state.lastMove ? state.lastMove.row * S + state.lastMove.col : -1;
 
   cells.forEach((cell, i) => {
     // Reset classes
@@ -76,7 +109,7 @@ function renderBoard() {
       const disc = el('div', `disc disc-${v === 1 ? 'black' : 'white'}`);
       disc.classList.add('placed');
       cell.appendChild(disc);
-    } else if (validSet.has(i) && !state.gameOver) {
+    } else if (validSet.has(i) && !state.gameOver && !isAI(state.currentPlayer)) {
       cell.classList.add('valid-hint');
     }
 
@@ -186,8 +219,12 @@ function setStatus(msg) {
 // ============================================================
 // API calls
 // ============================================================
-async function apiNewGame() {
-  const res = await fetch(`${API}/new_game`);
+async function apiNewGame(size) {
+  const res = await fetch(`${API}/new_game`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ size })
+  });
   if (!res.ok) throw new Error('Server error');
   return res.json();
 }
@@ -218,6 +255,7 @@ async function apiAiMove(board, player, depth) {
 async function startGame() {
   stopAI();
   state.mode       = $('sel-mode').value;
+  state.size       = parseInt($('sel-size').value, 10);
   const depth      = parseInt($('sel-depth-black').value, 10);
   state.depthBlack = depth;
   state.depthWhite = state.mode === 'aa' ? parseInt($('sel-depth-white').value, 10) : depth;
@@ -225,12 +263,16 @@ async function startGame() {
   state.humanPlayer = (state.mode === 'ha') ? (Math.random() < 0.5 ? 1 : 2) : 1;
   state.lastMove   = null;
   state.moveNumber = 0;
+  state.gameId++;
+  const myGameId = state.gameId;
   $('history').innerHTML = '';
   setStatus('');
   hideModal();
+  buildBoardDOM();
 
   try {
-    const data = await apiNewGame();
+    const data = await apiNewGame(state.size);
+    if (state.gameId !== myGameId) return;  // stale response from a previous startGame
     state.board         = data.board;
     state.currentPlayer = data.current_player;
     state.validMoves    = data.valid_moves ?? [];
@@ -259,8 +301,9 @@ async function onCellClick(e) {
   if (isAI(state.currentPlayer)) return;
 
   const idx = parseInt(e.currentTarget.dataset.idx, 10);
-  const row = Math.floor(idx / 8);
-  const col = idx % 8;
+  const S   = Math.round(Math.sqrt(state.board.length));
+  const row = Math.floor(idx / S);
+  const col = idx % S;
 
   const isValid = state.validMoves.some(m => m.row === row && m.col === col);
   if (!isValid) return;
@@ -272,10 +315,12 @@ async function onCellClick(e) {
 // Execute a move (human or AI)
 // ============================================================
 async function performMove(player, row, col) {
+  const myGameId = state.gameId;
   try {
     const data = await apiMakeMove(state.board, player, row, col);
+    if (state.gameId !== myGameId) return;
     if (data.error) {
-      setStatus('Invalid move: ' + data.error);
+      setStatus('Invalid move: ' + (data.message || data.error));
       return;
     }
     state.lastMove = { row, col };
@@ -318,6 +363,7 @@ function scheduleAIIfNeeded() {
 }
 
 async function runAI() {
+  const myGameId = state.gameId;
   if (state.gameOver || !isAI(state.currentPlayer)) return;
   state.aiRunning = true;
   setStatus('');
@@ -327,6 +373,8 @@ async function runAI() {
 
   try {
     const data = await apiAiMove(state.board, player, depth);
+
+    if (state.gameId !== myGameId) { state.aiRunning = false; return; }
 
     if (data.passed === 1) {
       addHistoryEntry(player, -1, -1, true);
@@ -501,7 +549,6 @@ $('modal').addEventListener('click', e => {
 // ============================================================
 // Init
 // ============================================================
-buildBoardDOM();
 updateDepthVisibility();
 updatePlayerLabels();
 
