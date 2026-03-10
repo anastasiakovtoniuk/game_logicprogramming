@@ -36,23 +36,32 @@
           </select>
         </div>
 
+        <div class="field">
+          <label>Board Size</label>
+          <select id="sel-size">
+            <option value="6">6×6</option>
+            <option value="8" selected>8×8</option>
+            <option value="10">10×10</option>
+          </select>
+        </div>
+
         <div class="field" id="field-depth-ai">
           <label>AI Difficulty</label>
           <select id="sel-depth-black">
-            <option value="2">Easy</option>
-            <option value="4" selected>Medium</option>
-            <option value="6">Hard</option>
-            <option value="8">Expert</option>
+            <option value="2">Easy (2 plies)</option>
+            <option value="4" selected>Medium (4 plies)</option>
+            <option value="6">Hard (6 plies)</option>
+            <option value="8">Expert (8 plies)</option>
           </select>
         </div>
 
         <div class="field" id="field-depth-white" style="display:none">
           <label>AI Difficulty — White</label>
           <select id="sel-depth-white">
-            <option value="2">Easy</option>
-            <option value="4" selected>Medium</option>
-            <option value="6">Hard</option>
-            <option value="8">Expert</option>
+            <option value="2">Easy (2 plies)</option>
+            <option value="4" selected>Medium (4 plies)</option>
+            <option value="6">Hard (6 plies)</option>
+            <option value="8">Expert (8 plies)</option>
           </select>
         </div>
 
@@ -97,19 +106,13 @@
 
     <!-- BOARD -->
     <div class="board-wrap">
-      <!-- Column labels -->
-      <div class="col-labels">
+      <!-- Column labels (populated by JS) -->
+      <div class="col-labels" id="col-labels">
         <div class="corner-spacer"></div>
-        <span>A</span><span>B</span><span>C</span><span>D</span>
-        <span>E</span><span>F</span><span>G</span><span>H</span>
       </div>
       <div class="board-row-wrap">
-        <!-- Row labels -->
-        <div class="row-labels">
-          <span>1</span><span>2</span><span>3</span>
-          <span>4</span><span>5</span><span>6</span>
-          <span>7</span><span>8</span>
-        </div>
+        <!-- Row labels (populated by JS) -->
+        <div class="row-labels" id="row-labels"></div>
         <!-- The actual board grid -->
         <div class="board" id="board"></div>
       </div>

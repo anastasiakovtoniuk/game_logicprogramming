@@ -190,7 +190,7 @@ body {
   font-size: 0.78rem;
   font-weight: 600;
   padding-right: 4px;
-  height: calc(var(--cell-size) * 8 + 9px); /* 8 cells + 7 gaps of 1px + border */
+  align-self: stretch;
 }
 
 /* ===== BOARD GRID ===== */
