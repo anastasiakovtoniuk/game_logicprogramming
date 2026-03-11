@@ -1,6 +1,11 @@
-# Reversi — гра на Prolog
+# Reversi / Othello — гра на Prolog та Haskell
 
 Реалізація гри Реверсі (Отелло) на SWI-Prolog з веб-інтерфейсом та AI на основі алгоритму MinMax з відсіканням Альфа-Бета.
+
+Завдання виконано командою:
+- **Малій Олександра** — реалізація Prolog-підходу (~33%)
+- **Ковтонюк Анастасія** — реалізація Haskell-підходу (~33%)
+- **Пігуляк Антон** — підготовка та презентація матеріалу (~33%)
 
 У проєкті є **дві серверні реалізації**:
 - **Prolog** — оригінальна реалізація логіки гри та AI
@@ -44,7 +49,20 @@ README.md          — опис проєкту
 - Чорні (гравець 1) — MAX-вузол, білі (гравець 2) — MIN-вузол
 - Оцінка позиції з точки зору чорних (позитивна = перевага чорних)
 - Глибина задається в пів-ходах (плаях): 2 / 4 / 6 / 8
-- Евристика: таблиця вагових коефіцієнтів позицій + кількість фішок в ендшпілі
+- Ходи сортуються за позиційною вагою перед пошуком (покращує відсікання у 2–4×)
+
+**Евристика оцінки позиції:**
+
+| Позиція | Вага | Пояснення |
+|---------|------|-----------|
+| Кути | +100 | Абсолютно стабільні, ніколи не перевертаються |
+| Суміжні з кутом (по краю) | −20 | Небезпечні: «дарують» кут суперникові |
+| Діагональні від кута | −50 | Найгірші позиції на дошці |
+| Решта краю | +10 | Відносно стабільні |
+| Внутрішні | −1..+1 | Нейтральні; краще ближче до центру |
+
+Рання гра: позиційна оцінка + мобільність × 10 (різниця кількості допустимих ходів).
+Ендшпіль (>75% клітинок заповнено): виключно різниця кількості фішок × 10.
 
 ## Режими гри
 
@@ -62,12 +80,41 @@ README.md          — опис проєкту
 | `/api/make_move` | POST | Виконати хід людини |
 | `/api/ai_move` | POST | Обчислити та виконати хід AI |
 
+## Структура коду
+
+```
+reversi.pl
+  ├── HTTP-маршрути та запуск сервера
+  ├── Розмір дошки (динамічний факт board_size/1)
+  ├── Операції над дошкою (get_cell, set_cell, initial_board)
+  ├── Логіка гри (scan_line, all_flips, valid_move, make_move, game_over)
+  ├── Функція оцінки позиції (cell_weight_rc, evaluate_flat, evaluate)
+  └── MinMax + Alpha-Beta (minimax, max_search, min_search, sort_moves)
+
+Reversi.hs
+  ├── Типи (Cell, Board, Winner, NextState, SearchResult)
+  ├── Операції над дошкою (boardFromFlatAuto, flattenBoard, initialBoard)
+  ├── Логіка гри (scanLine, allFlips, validMove, makeMove, gameOver)
+  ├── Евристика (cellWeight, evaluatePositional, evaluate)
+  └── MinMax + Alpha-Beta (minimax, chooseBestMove)
+
+Main.hs
+  └── HTTP-сервер Scotty + JSON-серіалізація + роздача static files
+```
+
+## Першоджерела використаних кодів
+
+Уся ігрова логіка, евристика та архітектура розроблені авторами самостійно.
+Зовнішні бібліотеки використані за стандартною документацією:
+- SWI-Prolog: `http/thread_httpd`, `http_dispatch`, `http_json` — офіційна документація
+- Haskell: бібліотеки `scotty`, `aeson`, `array` — Hackage документація
+
 ## Джерела
 
-- Russell, Norvig — *Artificial Intelligence: A Modern Approach*, розд. 5
-- Документація SWI-Prolog HTTP: https://www.swi-prolog.org/pldoc/man?section=http
-- Евристика Реверсі: https://www.samsoft.org.uk/reversi/strategy.html
-- https://discourse.haskell.org/t/reversi-applying-moves-with-case-of-and-pattern-matching/12922
-- https://www.haskell.org/documentation/
+1. Russell S. J. Artificial Intelligence: A Modern Approach / S. J. Russell, P. Norvig. — 4th ed. — Hoboken : Pearson, 2020. — 1132 p. — (Розд. 5 : Adversarial Search and Games).
+2. SWI-Prolog HTTP server libraries [Електронний ресурс] // SWI-Prolog Reference Manual. — Режим доступу : https://www.swi-prolog.org/pldoc/man?section=http. — Назва з екрана. — (Дата звернення: 11.03.2026).
+3. Wilson R. Reversi strategy guide [Електронний ресурс] / R. Wilson // Sam's Reversi Page. — Режим доступу : https://www.samsoft.org.uk/reversi/strategy.html. — Назва з екрана. — (Дата звернення: 11.03.2026).
+4. Reversi — applying moves with case of and pattern matching [Електронний ресурс] // Haskell Discourse. — Режим доступу : https://discourse.haskell.org/t/reversi-applying-moves-with-case-of-and-pattern-matching/12922. — Назва з екрана. — (Дата звернення: 11.03.2026).
+5. Haskell documentation [Електронний ресурс] // Haskell.org. — Режим доступу : https://www.haskell.org/documentation/. — Назва з екрана. — (Дата звернення: 11.03.2026).
 
 [Презентація PowerPoint](https://ukmaedu-my.sharepoint.com/:p:/g/personal/a_kovtoniuk_ukma_edu_ua/IQAm5_7BfjHMS4mxiSAAE0d0ATqgF670Txfx2HgdsVn5fZA?e=eempf1)
