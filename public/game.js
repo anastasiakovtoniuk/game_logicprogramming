@@ -289,7 +289,7 @@ async function startGame() {
     }
     scheduleAIIfNeeded();
   } catch (e) {
-    setStatus('Неможливо зʼєднатися з сервером. Чи запущено Prolog?');
+    setStatus('Неможливо зʼєднатися з сервером. Чи запущено бекенд сервер?');
   }
 }
 
@@ -346,7 +346,7 @@ async function performMove(player, row, col) {
 
     scheduleAIIfNeeded();
   } catch (err) {
-    setStatus('Помилка сервера. Перевірте Prolog.');
+    setStatus('Помилка сервера. Перевірте бекенд сервер.');
     console.error(err);
   }
 }
@@ -414,7 +414,7 @@ async function runAI() {
     scheduleAIIfNeeded();
   } catch (err) {
     state.aiRunning = false;
-    setStatus('Помилка ШІ. Перевірте Prolog сервер.');
+    setStatus('Помилка ШІ. Перевірте бекенд сервер.');
     console.error(err);
   }
 }
