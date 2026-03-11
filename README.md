@@ -69,3 +69,5 @@ README.md          — опис проєкту
 - Евристика Реверсі: https://www.samsoft.org.uk/reversi/strategy.html
 - https://discourse.haskell.org/t/reversi-applying-moves-with-case-of-and-pattern-matching/12922
 - https://www.haskell.org/documentation/
+
+[Презентація PowerPoint](https://ukmaedu-my.sharepoint.com/:p:/g/personal/a_kovtoniuk_ukma_edu_ua/IQAm5_7BfjHMS4mxiSAAE0d0ATqgF670Txfx2HgdsVn5fZA?e=eempf1)
